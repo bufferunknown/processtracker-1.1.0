@@ -1,0 +1,60 @@
+#!/bin/bash
+
+#Process tracker is a simple application that you can track every jobs that running by users in login node 
+
+## By Prasenjit Mukherjee
+
+
+clear
+unset R S Z T D pt x var
+top -b -c -n 1 | tail -n +8 | grep -Ev 'root|ntp|postfix|nslcd|daemon|rpc|rpcuser' > processtracker.txt
+R=`cat processtracker.txt | awk '{print $8}' | grep -iw R |wc -l`
+S=`cat processtracker.txt | awk '{print $8}' | grep -iw S |wc -l`
+Z=`cat processtracker.txt | awk '{print $8}' | grep -iw Z |wc -l`
+T=`cat processtracker.txt | awk '{print $8}' | grep -iw T |wc -l`
+D=`cat processtracker.txt | awk '{print $8}' | grep -iw D |wc -l`
+
+echo "Total Running Process(By Users) is : $R"
+echo "Total Interruptible Sleep Process(By Users) is : $S"
+echo "Total Stopped, either by a job control signal is : $T"
+echo "Total Zombie Process(By Users) is : $Z"
+echo "Total Uninterruptible Sleep Process(By Users) is : $D"
+echo
+echo
+
+while [ "$Z" -gt 0 ]
+do
+	read -p "Found "$Z" Zombie process do you want to kill the process? (y/n) : " yn
+	case $yn in
+		[Yy]* ) ps -A -ostat,ppid | awk '/[zZ]/{print $2}'  > zpkill.txt && kill -15 `cat zpkill.txt`; break;;
+		[Nn]* ) break;;
+	esac
+done
+
+while true; do
+    
+    echo ""
+    echo ""
+    echo "Job's that running by users in login node"
+    echo ""
+    echo "Type Desire Time Value (in minutes)"
+    read x
+    pt=`top -b -c -n 1 | tail -n +8 | grep -Ev 'root|ntp|postfix|nslcd|daemon|rpc|rpcuser' > processtracker.txt && cat processtracker.txt | tr ':' ' ' | awk -v var="$x" '$11>=var'`
+    if [ -z "$pt" ]
+	then
+        echo "No job's runnig by users sinces "$x" minutes"
+	exit 1
+    else
+    top -b -c -n 1 | tail -n +8 | grep -Ev 'root|ntp|postfix|nslcd|daemon|rpc|rpcuser' > processtracker.txt && cat processtracker.txt | tr ':' ' ' | awk -v var="$x" '$11>=var' 
+##    echo $pt
+    read -p "Do you wish to kill the process? (y/n) : " yn
+    case $yn in
+        [Yy]* ) top -b -c -n 1 | tail -n +8 | grep -Ev 'root|ntp|postfix|nslcd|daemon|rpc|rpcuser' > processtracker.txt && cat processtracker.txt | tr ':' ' ' | awk -v var="$x" '$11>=var' | awk '{print $1}' > /root/pkill.txt && kill -9 `cat /root/pkill.txt`; break;;
+        [Nn]* ) exit;;
+        * ) echo "Please answer yes or no.";;
+    esac
+   fi
+unset R S Z T D pt x var
+rm -rf processtracker.txt zpkill.txt
+done
+
