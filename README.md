@@ -1,4 +1,4 @@
-#Welcome to the processtracker-1.1.0 wiki!
+Welcome to the processtracker-1.1.0 wiki!
 
 processtracker-1.1.0
 
